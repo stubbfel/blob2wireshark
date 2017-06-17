@@ -1,0 +1,50 @@
+-- from http://torsten-traenkner.de/linux/development/wireshark.php
+--
+-- Example Protocol Wireshark dissector (a.k.a. decoder)
+-- Author: Torsten Traenkner
+-- Version History:
+-- 0.01 (02.04.2015)
+--
+-- This dissector decodes an example protocol.
+--
+-- use with:
+-- wireshark -Xlua_script:example.lua example.pcap
+--
+
+do
+
+  local example_tree = 0
+
+  -- #####################
+  -- ## Example Layer 1 ##
+  -- #####################
+  example_layer_1 = Proto("example_layer", "exampleProtocol layer1")
+
+  local example_layer_1_fields = example_layer_1.fields
+  example_layer_1_fields.field1 = ProtoField.uint8("exampleProtocol_layer1.field1", "field 1", base.DEC)
+  example_layer_1_fields.field2 = ProtoField.uint8("exampleProtocol_layer1.field2", "field 2", base.HEX)
+
+  function example_layer_1.dissector(buffer, packet_info, tree)
+      example_layer_1_tree = tree:add(example_layer_1, buffer(0, 2))
+      example_layer_1_tree:add(example_layer_1_fields.field1, buffer(0, 1))
+      example_layer_1_tree:add(example_layer_1_fields.field1, buffer(1, 1))
+      -- do something
+  end
+
+  -- #########################################
+  -- ## example protocol all layers chained ##
+  -- #########################################
+  example_protocol = Proto("exampleProtocol", "example Protocol")
+  function example_protocol.dissector(buffer, packet_info, tree)
+    packet_info.cols.protocol = example_protocol.name
+    example_tree = tree:add(example_protocol, buffer())
+    Dissector.get("example_layer"):call(buffer, packet_info, example_tree)
+  end
+
+  -- initialization routine
+  function example_protocol.init()
+    local wtap_encap_table = DissectorTable.get("ethertype")
+    wtap_encap_table:add(0xffff, example_protocol)
+  end
+
+end
