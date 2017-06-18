@@ -53,11 +53,12 @@ function b2ws_change_settings(config_string, blob_src, eth_src, eth_dst, eth_typ
 	return new_config_string
 end
 
-function b2ws_create_dissector(config_string)
+function b2ws_create_dissector(config_string, disector_name)
 	local b2ws_config = create_b2ws_config_object(config_string)
 	local template_string = read_b2ws_folder_file(b2ws_const.B2WS_PLUGIN_PATH, b2ws_const.B2WS_DISSECTOR_TEMPLATE_FILE)
 	template_string = template_string:gsub("0xffff", "0x" .. b2ws_config.eth_fake_header_type)
-	local dissector_path  = b2ws_config.blob_src .. b2ws_const.B2WS_DISSECTOR_EXTENSION
+		template_string = template_string:gsub("example", disector_name)
+	local dissector_path  = create_b2ws_folder_file_path(b2ws_const.B2WS_PLUGIN_PATH, disector_name .. b2ws_const.B2WS_DISSECTOR_EXTENSION)
 	write_b2ws_file(dissector_path, template_string)
 	return dissector_path
 end

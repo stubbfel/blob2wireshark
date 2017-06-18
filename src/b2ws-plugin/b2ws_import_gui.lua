@@ -40,9 +40,13 @@ local function b2ws_win_import_blob()
 		 b2ws_const.B2WS_CONFIG_LABEL_ETH_FAKE_HEADER_TYPE)
 	end
 
-	local function b2ws_win_btn_create_dissector()
+	local function b2ws_dlg_btn_create_dissector(dissector_name)
+		if dissector_name == "" then
+			return
+		end
+
 		local win_text = b2ws_trim(win:get_text())
-		local dissector_path = b2ws_create_dissector(win_text)
+		local dissector_path = b2ws_create_dissector(win_text, dissector_name)
 		local info = TextWindow.new(b2ws_const.B2WS_RELOAD_PLUGIN_WIN_TITLE)
 		info:set(b2ws_const.B2WS_RELOAD_PLUGIN_WIN_CONTENT:gsub("{0}", dissector_path))
 		local function b2ws_win_btn_show_disector()
@@ -57,6 +61,12 @@ local function b2ws_win_import_blob()
 			dis_win:add_button(b2ws_const.B2WS_SAVE_DISSECTOR_BTN_TITLE, b2ws_win_btn_save_disector)
 		end
 		info:add_button(b2ws_const.B2WS_SHOW_DISSECTOR_BTN_TITLE, b2ws_win_btn_show_disector)
+	end
+
+	local function b2ws_win_btn_create_dissector()
+		new_dialog(b2ws_const.B2WS_CREATE_DISSECTOR_DLG_TITLE,
+		 b2ws_dlg_btn_create_dissector,
+		 b2ws_const.B2WS_CREATE_DISSECTOR_DLG_NAME_LABEL)
 	end
 
    win:add_button(b2ws_const.B2WS_IMPORT_BLOB_BTN_TITLE, b2ws_win_btn_import_blob)
