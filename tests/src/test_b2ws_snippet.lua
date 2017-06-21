@@ -120,35 +120,31 @@ end
 foo_layer = Proto("foo_layer", "foo layer")
 
 local foo_layer_fields = foo_layer.fields
-foo_layer_fields.bla_count = ProtoField.uint8("foo_layer_fields.bla_count", "bla_count", base.HEX, nil--[[valuestring]], nil, bla_count description})
-foo_layer_fields.bla = ProtoField.bytes("foo_layer_fields.bla", "bla", base.HEX, nil--[[valuestring]], nil, bla description})
-foo_layer_fields.foo = ProtoField.uint32("foo_layer_fields.foo", "foo", base.HEX, nil--[[valuestring]], 0x0000ffff, foo description})
-foo_layer_fields.bar = ProtoField.bytes("foo_layer_fields.bar", "bar", base.HEX, nil--[[valuestring]], nil, bar description})
-foo_layer_fields.bla = ProtoField.bytes("foo_layer_fields.bla", "bla", base.HEX, nil--[[valuestring]], nil, bla description})
-foo_layer_fields.bla = ProtoField.int16("foo_layer_fields.bla", "bla", base.DEC, nil--[[valuestring]], nil, bla description})
-foo_layer_fields.bla = ProtoField.int32("foo_layer_fields.bla", "bla", base.DEC, nil--[[valuestring]], nil, bla description})
+foo_layer_fields.bla_count = ProtoField.uint8("foo_layer_fields.bla_count", "bla_count", base.HEX, nil--[[valuestring]], nil, "bla_count description")
+foo_layer_fields.bla = ProtoField.bytes("foo_layer_fields.bla", "bla", base.HEX, nil--[[valuestring]], nil, "bla description")
+foo_layer_fields.foo = ProtoField.uint32("foo_layer_fields.foo", "foo", base.HEX, nil--[[valuestring]], 0x0000ffff, "foo description")
+foo_layer_fields.bar = ProtoField.bytes("foo_layer_fields.bar", "bar", base.HEX, nil--[[valuestring]], nil, "bar description")
+foo_layer_fields.bla = ProtoField.bytes("foo_layer_fields.bla", "bla", base.HEX, nil--[[valuestring]], nil, "bla description")
+foo_layer_fields.bla = ProtoField.int16("foo_layer_fields.bla", "bla", base.DEC, nil--[[valuestring]], nil, "bla description")
+foo_layer_fields.bla = ProtoField.int32("foo_layer_fields.bla", "bla", base.DEC, nil--[[valuestring]], nil, "bla description")
 
 function foo_layer.dissector(buffer, packet_info, tree)
-	foo_layer_tree = tree:add(foo_layer, buffer(0, 14.0))
+	foo_layer_tree = tree:add(foo_layer, buffer(0, buffer:len()))
 
 	local bla_count_value = buffer(0, 1):le_uint()
 	foo_layer_tree:add(foo_layer_fields.bla_count, buffer(0, 1), bla_count_value)
 
 	local current_offset = 1
-	local bla_value = buffer(current_offset, 2 * bla_count_value):bytes()
-	foo_layer_tree:add(foo_layer_fields.bla, buffer(current_offset, 2 * bla_count_value), bla_value)
+	foo_layer_tree:add(foo_layer_fields.bla, buffer(current_offset, 2 * bla_count_value))
 
 	current_offset = current_offset + 2 * bla_count_value
 	local foo_value = buffer(current_offset, 4):le_uint()
 	foo_layer_tree:add(foo_layer_fields.foo, buffer(current_offset, 4), foo_value)
 
-	current_offset = current_offset + 4
-	local bar_value = buffer(current_offset, buffer:len() - current_offset):bytes()
-	foo_layer_tree:add(foo_layer_fields.bar, buffer(current_offset, buffer:len() - current_offset), bar_value)
+	foo_layer_tree:add(foo_layer_fields.bar, buffer(current_offset, buffer:len() - current_offset))
 
 	current_offset = current_offset + buffer:len() - current_offset
-	local bla_value = buffer(current_offset, 3):bytes()
-	foo_layer_tree:add(foo_layer_fields.bla, buffer(current_offset, 3), bla_value)
+	foo_layer_tree:add(foo_layer_fields.bla, buffer(current_offset, 3))
 
 	current_offset = current_offset + 3
 	local bla_value = buffer(current_offset, 2):le_uint()
@@ -159,11 +155,11 @@ function foo_layer.dissector(buffer, packet_info, tree)
 	foo_layer_tree:add(foo_layer_fields.bla, buffer(current_offset, 4), bla_value)
 
 	current_offset = current_offset + 4
-	Dissector.get("bar_layer"):call(buffer(14.0, buffer:len() - 14.0):tvb(), packet_info, tree)
+	Dissector.get("bar_layer"):call(buffer(14.0, buffer:len() - 14.0):tvb(), packet_info, foo_layer_tree)
 end
 ]===]
         lu.assertEquals(result_template:gsub("%s", ""), expected_result:gsub("%s", ""))
---        print(result_template)
+        --print(result_template)
     end
 
     function TestSnippet:testCreateLayerSnippets()
@@ -235,12 +231,12 @@ end
         fieldObject = b2ws_create_field_object("foo3", "uint16", "[ ]")
         result_string = b2ws_create_dissector_fields_definition_snippet(structObject, fieldObject, test_field_declaration_template)
         lu.assertEquals(result_string,
-        "local foo3_value = buffer(0,buffer:len() - current_offset):bytes()\nbla_layer_tree:add(bla_layer_fields.foo3, buffer(0, buffer:len() - current_offset), foo3_value)")
+        "bla_layer_tree:add(bla_layer_fields.foo3, buffer(0, buffer:len() - current_offset))")
 
         fieldObject = b2ws_create_field_object("foo33", "uint16", "[3]")
         result_string = b2ws_create_dissector_fields_definition_snippet(structObject, fieldObject, test_field_declaration_template)
         lu.assertEquals(result_string,
-        "local foo33_value = buffer(0,6):bytes()\nbla_layer_tree:add(bla_layer_fields.foo33, buffer(0, 6), foo33_value)")
+        "bla_layer_tree:add(bla_layer_fields.foo33, buffer(0, 6))")
 
         fieldObject = b2ws_create_field_object("foo4", "int16", "")
         local result_string = b2ws_create_dissector_fields_definition_snippet(structObject, fieldObject, test_field_declaration_template)
@@ -250,7 +246,7 @@ end
         fieldObject = b2ws_create_field_object("foo5", "int16", "[foo]")
         result_string = b2ws_create_dissector_fields_definition_snippet(structObject, fieldObject, test_field_declaration_template)
         lu.assertEquals(result_string,
-        "local foo5_value = buffer(0,2 * foo_value):bytes()\nbla_layer_tree:add(bla_layer_fields.foo5, buffer(0, 2 * foo_value), foo5_value)")
+        "bla_layer_tree:add(bla_layer_fields.foo5, buffer(0, 2 * foo_value))")
 
         fieldObject = b2ws_create_field_object("foo6", "uint32", ":0-15")
         result_string = b2ws_create_dissector_fields_definition_snippet(structObject, fieldObject, test_field_declaration_template)

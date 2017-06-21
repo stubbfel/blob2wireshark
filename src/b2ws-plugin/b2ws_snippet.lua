@@ -75,7 +75,7 @@ function {field_name}_layer.dissector(buffer, packet_info, tree)
 end
 ]]
 
-next_proto_dissector_call = [[Dissector.get("{field_name}_layer"):call(buffer({struct_size}, buffer:len() - {struct_size}):tvb(), packet_info, tree)]]
+next_proto_dissector_call = [[Dissector.get("{field_name}_layer"):call(buffer({struct_size}, buffer:len() - {struct_size}):tvb(), packet_info, {struct_name}_layer_tree)]]
 
 proto_template = [[-- {struct_name} Layer
 {struct_name}_layer = Proto("{struct_name}_layer", "{struct_name} layer")
@@ -87,7 +87,7 @@ function {struct_name}_layer.dissector(buffer, packet_info, tree)
 {field_definitions}
 end]]
 
-field_declaration_template = [===[{struct_name}_layer_fields.{field_name} = ProtoField.{field_type}("{struct_name}_layer_fields.{field_name}", "{field_name}", {base_type}, nil--[[valuestring]], {bit_mask}, {field_name} description})]===]
+field_declaration_template = [===[{struct_name}_layer_fields.{field_name} = ProtoField.{field_type}("{struct_name}_layer_fields.{field_name}", "{field_name}", {base_type}, nil--[[valuestring]], {bit_mask}, "{field_name} description")]===]
 field_definition_template = [[
 local {field_name}_value = buffer(current_offset, {field_end}):{to_method}()
 {struct_name}_layer_tree:add({struct_name}_layer_fields.{field_name}, buffer(current_offset, {field_end}), {field_name}_value)
@@ -112,14 +112,24 @@ end
 
 function b2ws_create_dissector_call_snippet(struct_object, field_object, template_string)
 	local result_template = template_string:gsub("{field_name}", field_object.name)
+	result_template = result_template:gsub("{struct_name}", struct_object.name)
 	return result_template:gsub("{struct_size}", struct_object.size)
 end
 
 function b2ws_create_dissector_fields_definition_snippet(struct_object, field_object, template_string)
 	local result_template = template_string:gsub("{struct_name}", struct_object.name)
+	local array_number = field_object.array_number
+	if array_number== nil then
+		result_template = result_template:gsub("{to_method}", "le_uint")
+	else
+		result_template = result_template:gsub("local {field_name}_value = buffer%(current_offset, {field_end}%):{to_method}%(%)\n","")
+		result_template = result_template:gsub("local {field_name}_value = %g+\n", "")
+		result_template = result_template:gsub(", {field_name}_value%)", ")")
+	end
+
 	result_template = result_template:gsub("{field_name}", field_object.name)
 	local bit_size = field_object.bit_size
-	local array_number = field_object.array_number
+
 	if bit_size == 0 then
 		result_template = result_template:gsub("{field_end}", "buffer:len() - current_offset")
 	else
@@ -130,6 +140,8 @@ function b2ws_create_dissector_fields_definition_snippet(struct_object, field_ob
 		if array_number == nil or tonumber(array_number) ~= nil then
 			if field_object.bit_mask ~= nil then
 				byte_size = tonumber(string.match(field_object.type, "(%d+)")) / 8
+			    result_template = result_template:gsub("\ncurrent_offset = current_offset %+ {field_end}", "")
+				result_template = result_template:gsub("local current_offset = {field_end}", "local current_offset = 0")
 			end
 
 			result_template = result_template:gsub("{field_end}", string.match(byte_size, "(%d+)"))
@@ -138,11 +150,6 @@ function b2ws_create_dissector_fields_definition_snippet(struct_object, field_ob
 		end
 	end
 
-	if array_number== nil then
-		result_template = result_template:gsub("{to_method}", "le_uint")
-	else
-		result_template = result_template:gsub("{to_method}", "bytes")
-	end
 
 	return result_template
 end
@@ -174,6 +181,12 @@ function b2ws_create_dissector_fields_declaration_snippet(struct_object, field_o
 	return result_template:gsub("{bit_mask}", bit_mask)
 end
 
+function get_fields_definition_template(field_object)
+	if field_object.bit_mask ~= nil then
+		return value
+	end
+end
+
 function b2ws_create_dissector_fields_snippet(struct_object, template_string)
 	local field_list = struct_object.fields
 	local field_declarations_string = ""
@@ -203,7 +216,7 @@ function b2ws_create_dissector_fields_snippet(struct_object, template_string)
 		pre_template = b2ws_create_dissector_next_layer_snippet(field_object, next_proto_template) .. "\n"
 		field_definitions_string = field_definitions_string .. b2ws_create_dissector_call_snippet(struct_object, field_object, next_proto_dissector_call)
 	else
-		field_declarations_string = field_declarations_string .. b2ws_create_dissector_fields_declaration_snippet(struct_object, field_object, field_declaration_template)
+		field_declarations_string = field_declarations_string .. b2ws_create_dissector_fields_declaration_snippet(struct_object, field_object, field_declaration_template).. "\n"
 		field_definitions_string = field_definitions_string  .. b2ws_create_dissector_fields_definition_snippet(struct_object, field_object, last_field_definition_template)
 	end
 
@@ -214,6 +227,9 @@ end
 
 function b2ws_create_dissector_layer_snippet(struct_object, template_string)
 	local result_template = template_string:gsub("{struct_name}", struct_object.name)
+	if struct_object.fields[#struct_object.fields].bit_size == 0 then
+		result_template = result_template:gsub("{struct_size}", "buffer:len()")
+	end
 	return result_template:gsub("{struct_size}", struct_object.size)
 end
 
