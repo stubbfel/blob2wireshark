@@ -121,10 +121,10 @@ foo_layer = Proto("foo_layer", "foo layer")
 
 local foo_layer_fields = foo_layer.fields
 foo_layer_fields.bla_count = ProtoField.uint8("foo_layer_fields.bla_count", "bla_count", base.HEX, nil--[[valuestring]], nil, "bla_count description")
-foo_layer_fields.bla = ProtoField.bytes("foo_layer_fields.bla", "bla", base.HEX, nil--[[valuestring]], nil, "bla description")
+foo_layer_fields.bla = ProtoField.bytes("foo_layer_fields.bla", "bla", base.NONE, nil--[[valuestring]], nil, "bla description")
 foo_layer_fields.foo = ProtoField.uint32("foo_layer_fields.foo", "foo", base.HEX, nil--[[valuestring]], 0x0000ffff, "foo description")
-foo_layer_fields.bar = ProtoField.bytes("foo_layer_fields.bar", "bar", base.HEX, nil--[[valuestring]], nil, "bar description")
-foo_layer_fields.bla = ProtoField.bytes("foo_layer_fields.bla", "bla", base.HEX, nil--[[valuestring]], nil, "bla description")
+foo_layer_fields.bar = ProtoField.bytes("foo_layer_fields.bar", "bar", base.NONE, nil--[[valuestring]], nil, "bar description")
+foo_layer_fields.bla = ProtoField.bytes("foo_layer_fields.bla", "bla", base.NONE, nil--[[valuestring]], nil, "bla description")
 foo_layer_fields.bla = ProtoField.int16("foo_layer_fields.bla", "bla", base.DEC, nil--[[valuestring]], nil, "bla description")
 foo_layer_fields.bla = ProtoField.int32("foo_layer_fields.bla", "bla", base.DEC, nil--[[valuestring]], nil, "bla description")
 
@@ -187,12 +187,12 @@ end
         fieldObject = b2ws_create_field_object("foo3", "uint16", "[ ]")
         result_string = b2ws_create_dissector_fields_declaration_snippet(structObject, fieldObject, test_field_declaration_template)
         lu.assertEquals(result_string,
-            "bla_layer_fields.foo3 = ProtoField.bytes(\"bla_layer_fields.foo3\", \"foo3\", base.HEX, nil--[[valuestring]], nil, foo3 description})")
+            "bla_layer_fields.foo3 = ProtoField.bytes(\"bla_layer_fields.foo3\", \"foo3\", base.NONE, nil--[[valuestring]], nil, foo3 description})")
 
         fieldObject = b2ws_create_field_object("foo3-1", "uint16", "[]")
         result_string = b2ws_create_dissector_fields_declaration_snippet(structObject, fieldObject, test_field_declaration_template)
         lu.assertEquals(result_string,
-            "bla_layer_fields.foo3-1 = ProtoField.bytes(\"bla_layer_fields.foo3-1\", \"foo3-1\", base.HEX, nil--[[valuestring]], nil, foo3-1 description})")
+            "bla_layer_fields.foo3-1 = ProtoField.bytes(\"bla_layer_fields.foo3-1\", \"foo3-1\", base.NONE, nil--[[valuestring]], nil, foo3-1 description})")
 
         fieldObject = b2ws_create_field_object("foo4", "int16", "")
         result_string = b2ws_create_dissector_fields_declaration_snippet(structObject, fieldObject, test_field_declaration_template)
@@ -202,7 +202,7 @@ end
         fieldObject = b2ws_create_field_object("foo5", "int16", "[foo]")
         result_string = b2ws_create_dissector_fields_declaration_snippet(structObject, fieldObject, test_field_declaration_template)
         lu.assertEquals(result_string,
-            "bla_layer_fields.foo5 = ProtoField.bytes(\"bla_layer_fields.foo5\", \"foo5\", base.HEX, nil--[[valuestring]], nil, foo5 description})")
+            "bla_layer_fields.foo5 = ProtoField.bytes(\"bla_layer_fields.foo5\", \"foo5\", base.NONE, nil--[[valuestring]], nil, foo5 description})")
 
         fieldObject = b2ws_create_field_object("foo6", "uint32", ":0-15")
         result_string = b2ws_create_dissector_fields_declaration_snippet(structObject, fieldObject, test_field_declaration_template)

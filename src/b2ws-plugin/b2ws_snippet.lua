@@ -164,7 +164,9 @@ function b2ws_create_dissector_fields_declaration_snippet(struct_object, field_o
 		result_template = result_template:gsub("{field_type}", "bytes")
 	end
 
-	if b2ws_string_starts(field_type, "u") or field_object.array_number ~= nil then
+	if field_object.array_number ~= nil then
+		result_template = result_template:gsub("{base_type}", "base.NONE")
+	elseif b2ws_string_starts(field_type, "u") then
 		result_template = result_template:gsub("{base_type}", "base.HEX")
 	else
 		result_template = result_template:gsub("{base_type}", "base.DEC")
