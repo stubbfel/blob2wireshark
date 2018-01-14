@@ -116,7 +116,7 @@ function b2ws_create_dissector_call_snippet(struct_object, field_object, templat
 	return result_template:gsub("{struct_size}", struct_object.size)
 end
 
-function b2ws_create_dissector_fields_definition_snippet(struct_object, field_object, template_string)
+function b2ws_create_dissector_fields_definition_snippet(struct_object, field_object, template_string, next_index)
 	local result_template = template_string:gsub("{struct_name}", struct_object.name)
 	local array_number = field_object.array_number
 	if array_number== nil then
@@ -140,7 +140,10 @@ function b2ws_create_dissector_fields_definition_snippet(struct_object, field_ob
 		if array_number == nil or tonumber(array_number) ~= nil then
 			if field_object.bit_mask ~= nil then
 				byte_size = tonumber(string.match(field_object.type, "(%d+)")) / 8
-			    result_template = result_template:gsub("\ncurrent_offset = current_offset %+ {field_end}", "")
+				if next_index > 0 and struct_object.fields[next_index].bit_mask ~= nil then
+			    	result_template = result_template:gsub("\ncurrent_offset = current_offset %+ {field_end}", "")
+				end
+
 				result_template = result_template:gsub("local current_offset = {field_end}", "local current_offset = 0")
 			end
 
@@ -200,14 +203,14 @@ function b2ws_create_dissector_fields_snippet(struct_object, template_string)
 	if field_list_len > 1 then
 		field_object = field_list[1]
 		field_declarations_string = field_declarations_string .. b2ws_create_dissector_fields_declaration_snippet(struct_object, field_object, field_declaration_template) .. "\n"
-		field_definitions_string = field_definitions_string  .. b2ws_create_dissector_fields_definition_snippet(struct_object, field_object, tmp_field_definition_template) .. "\n"
+		field_definitions_string = field_definitions_string  .. b2ws_create_dissector_fields_definition_snippet(struct_object, field_object, tmp_field_definition_template, 2) .. "\n"
 		tmp_field_definition_template = field_definition_template
 		if field_list_len > 2 then
 			for key_index = 2, field_list_len - 1
 			do
 				field_object = field_list[key_index]
 				field_declarations_string = field_declarations_string .. b2ws_create_dissector_fields_declaration_snippet(struct_object, field_object, field_declaration_template) .. "\n"
-				field_definitions_string = field_definitions_string  .. b2ws_create_dissector_fields_definition_snippet(struct_object, field_object, tmp_field_definition_template) .. "\n"
+				field_definitions_string = field_definitions_string  .. b2ws_create_dissector_fields_definition_snippet(struct_object, field_object, tmp_field_definition_template, key_index + 1) .. "\n"
 			end
 		end
 	end
@@ -219,7 +222,7 @@ function b2ws_create_dissector_fields_snippet(struct_object, template_string)
 		field_definitions_string = field_definitions_string .. b2ws_create_dissector_call_snippet(struct_object, field_object, next_proto_dissector_call)
 	else
 		field_declarations_string = field_declarations_string .. b2ws_create_dissector_fields_declaration_snippet(struct_object, field_object, field_declaration_template).. "\n"
-		field_definitions_string = field_definitions_string  .. b2ws_create_dissector_fields_definition_snippet(struct_object, field_object, last_field_definition_template)
+		field_definitions_string = field_definitions_string  .. b2ws_create_dissector_fields_definition_snippet(struct_object, field_object, last_field_definition_template, 0)
 	end
 
 	local result_template_string = template_string:gsub("{field_declarations}", field_declarations_string)
